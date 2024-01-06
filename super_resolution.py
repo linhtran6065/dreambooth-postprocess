@@ -1,5 +1,5 @@
 import torch
-from PIL import Image
+import PIL
 import numpy as np
 from RealESRGAN import RealESRGAN
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
@@ -12,19 +12,19 @@ class Upscaler:
         self.model.load_weights(f'weights/RealESRGAN_x{self.scale}.pth', download=True)
         self.img2img = StableDiffusionImg2ImgPipeline(**text2img.components)
         
-    def upscale(self, imgs: list[Image]) -> list[Image]:
-        torch.cuda.empty_cache()
+    def upscale(self, imgs: list[PIL.Image]) -> list[PIL.Image]:
+        # torch.cuda.empty_cache()
         upscaled_imgs = []
         for img in imgs:
             upscaled_img = self.model.predict(img)
             upscaled_imgs.append(upscaled_img)
         return upscaled_imgs
 
-    def hires_fix(self, imgs: list[Image], prompt: str, negative_prompt: str) -> list[Image]:
+    def hires_fix(self, imgs: list[PIL.Image], prompt: str, negative_prompt: str) -> list[PIL.Image]:
         upscaled_images = self.upscale(imgs)
         results = self.img2img(
-            prompt=prompt, 
-            negative_prompt=negative_prompt,
+            prompt=[prompt]*len(imgs), 
+            negative_prompt=[negative_prompt]*len(imgs),
             image=upscaled_images, 
             strength=0.2, 
             guidance_scale=7.5, 
